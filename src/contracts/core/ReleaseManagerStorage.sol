@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 import "@openzeppelin/contracts/utils/Checkpoints.sol";
-import "../interfaces/core/IReleaseManager.sol";
+import "../interfaces/IReleaseManager.sol";
 
 /**
  * @title ReleaseManagerStorage
@@ -16,23 +16,20 @@ abstract contract ReleaseManagerStorage is IReleaseManager {
     /// @notice Mapping of AVS addresses to registration status
     mapping(address => bool) public registeredAVS;
 
-    /// @notice Mapping of concatenated(avsAddress, digest) to artifact details
-    mapping(bytes32 => Artifact) public artifacts;
+    /// @notice Mapping of AVS to array of ALL published releases (append-only)
+    mapping(address => PublishedRelease[]) public allPublishedReleases;
 
-    /// @notice Mapping of AVS to operatorSetId to array of ALL promoted artifacts (never deleted)
-    mapping(address => mapping(bytes32 => PromotedArtifact[])) public allPromotedArtifacts;
+    /// @notice Checkpoints tracking the index of releases for each AVS
+    /// @dev Uses Trace224 to store uint224 indices that point to allPublishedReleases array
+    mapping(address => Checkpoints.Trace224) internal releaseIndexHistory;
 
-    /// @notice Mapping to track if an artifact exists for quick lookup
-    mapping(bytes32 => bool) public artifactExists;
+    /// @notice Mapping to track deprecated releases per AVS
+    /// @dev Key is keccak256(avs, digest)
+    mapping(bytes32 => bool) public isDeprecated;
 
-    /// @notice Checkpoints tracking the index of the active promotion for each AVS/operatorSet
-    /// @dev Uses History to store uint256 indices that point to allPromotedArtifacts array
-    mapping(address => mapping(bytes32 => Checkpoints.History)) internal _promotionIndexHistory;
-
-    /// @notice Checkpoints tracking promotion status changes for specific artifacts
-    /// @dev Key is keccak256(avs, operatorSetId, digest), value is status enum cast to uint256
-    mapping(bytes32 => Checkpoints.History) internal _promotionStatusHistory;
+    /// @notice List of deprecated release digests per AVS
+    mapping(address => bytes32[]) public deprecatedReleases;
 
     /// @notice Storage gap for future upgrades
-    uint256[41] private __gap;
+    uint256[44] private __gap;
 }
